@@ -1,0 +1,34 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    restart: always
+    command:
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=m.mnich@proton.me"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # Uncomment this to get a fake certificate when testing
+      - "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
+  wordpress:
+    image: wordpress
+    container_name: wordpress
+    restart: always
+    volumes:
+      - ./wordpress:/var/www/html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wordpress.rule=Host(`incognito-biuro.pl`)"
+      - "traefik.http.routers.wordpress.entrypoints=websecure"
+      - "traefik.http.routers.wordpress.tls.certresolver=myresolver"
