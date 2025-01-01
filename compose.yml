@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v3.1
+    image: traefik:latest
     container_name: traefik
     restart: always
     command:
@@ -39,18 +39,35 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - letsencrypt:/letsencrypt
+      - letsencrypt_data:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
   wordpress:
-    image: wordpress
+    image: wordpress:latest
     container_name: wordpress
     restart: always
+    ports:
+      - 8080:80
     volumes:
-      - wordpress:/var/www/html
+      - wordpress_data:/var/www/html
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.wordpress.rule=Host(`incognito-biuro.pl`) || Host(`www.incognito-biuro.pl`)"
+      - "traefik.http.routers.wordpress.rule=Host(`localhost`)"
       - "traefik.http.routers.wordpress.entrypoints=websecure"
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+      MYSQL_ROOT_PASSWORD: wordpress
+    volumes:
+      - mysql_data:/var/lib/mysql
+
 volumes:
-  letsencrypt:
-  wordpress:
+  letsencrypt_data:
+  wordpress_data:
+  mysql_data:
